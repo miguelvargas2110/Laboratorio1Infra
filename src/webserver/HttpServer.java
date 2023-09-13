@@ -3,6 +3,7 @@ package webserver;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Date;
 import java.util.Scanner;
 
 public class HttpServer {
@@ -44,24 +45,65 @@ public class HttpServer {
         fromNetwork = new BufferedReader(new InputStreamReader(socket.getInputStream()));
     }
 
-    public void enviarPagina(String direccion) {
+    public void enviarPagina(String direccion) throws IOException {
 
         try{
             String [] spliteado = direccion.split("\\.");
             String extension = spliteado[spliteado.length-1];
-            if(extension.equals("hmtl")) {
+            if(extension.equals("html")) {
                 BufferedReader fileReader = new BufferedReader(new FileReader("src" + direccion));
+                File localFile = new File("src\\" + direccion);
+                long contentLength = localFile.length();
+                long fecha = localFile.lastModified();
+                Date lastModified = new Date(fecha);
                 toNetwork.println("HTTP/1.1 200");
-                toNetwork.println("Context-Type: text/html");
+                toNetwork.println("Server: Laboratorio 1");
+                toNetwork.println("Date: " + new java.util.Date());
+                toNetwork.println("Last-Modified: " + lastModified);
+                toNetwork.println("Content-type: text/html");
+                toNetwork.println("Content-length: " + contentLength);
+                toNetwork.println("Cache-Control: no-cache");
                 toNetwork.println("");
                 String message;
                 while ((message = fileReader.readLine()) != null) {
                     toNetwork.println(message);
                 }
+            }else if(extension.equals("pdf")){
+                FileInputStream fileInputStream = new FileInputStream("src" + direccion);
+                File localFile = new File("src\\" + direccion);
+                long contentLength = localFile.length();
+                long fecha = localFile.lastModified();
+                Date lastModified = new Date(fecha);
+                toNetwork.println("HTTP/1.1 200");
+                toNetwork.println("Server: Laboratorio 1");
+                toNetwork.println("Date: " + new java.util.Date());
+                toNetwork.println("Last-Modified: " + lastModified);
+                toNetwork.println("Content-type: application/pdf");
+                toNetwork.println("Content-length: " + contentLength);
+                toNetwork.println("Cache-Control: no-cache");
+                toNetwork.println("");
+                OutputStream outputStream = serverSideSocket.getOutputStream();
+                byte[] buffer = new byte[1024];
+                int bytesRead;
+                while ((bytesRead = fileInputStream.read(buffer)) != -1) {
+                    outputStream.write(buffer, 0, bytesRead);
+                }
+
+                fileInputStream.close();
+                outputStream.close();
             }else{
                 FileInputStream fileInputStream = new FileInputStream("src" + direccion);
+                File localFile = new File("src\\" + direccion);
+                long contentLength = localFile.length();
+                long fecha = localFile.lastModified();
+                Date lastModified = new Date(fecha);
                 toNetwork.println("HTTP/1.1 200");
-                toNetwork.println("Context-Type: image/jpg");
+                toNetwork.println("Server: Laboratorio 1");
+                toNetwork.println("Date: " + new java.util.Date());
+                toNetwork.println("Last-Modified: " + lastModified);
+                toNetwork.println("Content-type: image/" + extension);
+                toNetwork.println("Content-length: " + contentLength);
+                toNetwork.println("Cache-Control: no-cache");
                 toNetwork.println("");
                 OutputStream outputStream = serverSideSocket.getOutputStream();
                 byte[] buffer = new byte[1024];
@@ -75,20 +117,19 @@ public class HttpServer {
             }
 
         }catch (Exception e){
-            toNetwork.println("HTTP/1.1 403 Not Found");
-            toNetwork.println("Server: Bard");
+            BufferedReader fileReader = new BufferedReader(new FileReader("src/NotFound.html"));
+            File localFile = new File("src/NotFound.html");
+            long contentLength = localFile.length();
+            toNetwork.println("HTTP/1.1 404 Not Found");
+            toNetwork.println("Server: Laboratorio 1");
             toNetwork.println("Date: " + new java.util.Date());
             toNetwork.println("Content-type: text/html");
+            toNetwork.println("Content-length: " + contentLength);
             toNetwork.println("");
-            toNetwork.println("<html>");
-            toNetwork.println("<head>");
-            toNetwork.println("<title>404 Not Found</title>");
-            toNetwork.println("</head>");
-            toNetwork.println("<body>");
-            toNetwork.println("<h1>404 Not Found</h1>");
-            toNetwork.println("<p>The requested resource could not be found.</p>");
-            toNetwork.println("</body>");
-            toNetwork.println("</html>");
+            String message;
+            while ((message = fileReader.readLine()) != null) {
+                toNetwork.println(message);
+            }
             toNetwork.flush();
         }
 
