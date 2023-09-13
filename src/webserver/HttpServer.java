@@ -26,9 +26,13 @@ public class HttpServer {
             String message = fromNetwork.readLine();
             String direccion = "";
             while(true){
-                String [] mensaje = message.split(" ");
-                direccion = mensaje[1];
-                break;
+                try{
+                    String [] mensaje = message.split(" ");
+                    direccion = mensaje[1];
+                    break;
+                }catch (Exception e){
+
+                }
             }
             while (!message.equals("")){
                 System.out.println(message);
